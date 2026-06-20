@@ -1,0 +1,12 @@
+{
+  "name": "renewable-energy-intelligence-dashboard",
+  "version": "1.0.0",
+  "description": "Renewable Energy Intelligence Platform + AI Energy Copilot for Ahmedabad MSMEs",
+  "main": "backend/server.js",
+  "scripts": {
+    "setup": "npm install --prefix backend",
+    "start": "node backend/server.js"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}

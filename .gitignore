@@ -1,0 +1,23 @@
+# Sensitive API keys and configs
+backend/.env
+.env
+
+# Python caching & build artifacts
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+env/
+venv/
+ENV/
+
+# Node modules (in case any were installed)
+node_modules/
+
+# Local configuration files / certs
+.gradio/
+*.pem
+*.key
+.DS_Store
+Thumbs.db

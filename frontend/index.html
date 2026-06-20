@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AetherGrid // Ahmedabad MSME Renewable Energy Intelligence Platform</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Leaflet GIS CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <!-- Custom Style Sheet -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="glow-container">
+        <div class="glow-orb orb-1"></div>
+        <div class="glow-orb orb-2"></div>
+    </div>
+
+    <div class="app-layout">
+        <!-- Sidebar Navigation & Control Panel -->
+        <aside class="sidebar glass">
+            <div class="brand">
+                <div class="brand-logo"><i class="fa-solid fa-bolt-lightning text-primary-glow"></i></div>
+                <div class="brand-name">
+                    <h2>AETHERGRID</h2>
+                    <span>Industrial AI Copilot</span>
+                </div>
+            </div>
+
+            <div class="control-section">
+                <h3><i class="fa-solid fa-industry"></i> MSME Profile Selector</h3>
+                <div class="input-wrapper">
+                    <select id="msme-profile-selector" class="custom-select">
+                        <option value="textile" selected>Textile Mfg (Vatva GIDC)</option>
+                        <option value="pharmaceutical">Pharma Formulation (Naroda GIDC)</option>
+                        <option value="chemical">Chemical Process Plant (Vatva GIDC)</option>
+                        <option value="engineering">Engineering & Fab (Odhav GIDC)</option>
+                        <option value="packaging">Packaging & Printing (Changodar)</option>
+                        <option value="food_processing">Food & Dairy (Kathwada GIDC)</option>
+                    </select>
+                </div>
+                <p class="profile-desc" id="profile-description">
+                    High continuous loads from weaving and dyeing machinery. High solar roofing potential.
+                </p>
+            </div>
+
+            <div class="control-section">
+                <h3><i class="fa-solid fa-cloud-sun"></i> Weather Simulator</h3>
+                <div class="slider-group">
+                    <div class="slider-label">
+                        <span>Temperature</span>
+                        <span class="value-display"><span id="val-temp">32</span>°C</span>
+                    </div>
+                    <input type="range" id="slider-temp" min="15" max="50" value="32" class="custom-range">
+                </div>
+
+                <div class="slider-group">
+                    <div class="slider-label">
+                        <span>Cloud Cover</span>
+                        <span class="value-display"><span id="val-clouds">20</span>%</span>
+                    </div>
+                    <input type="range" id="slider-clouds" min="0" max="100" value="20" class="custom-range">
+                </div>
+
+                <div class="slider-group">
+                    <div class="slider-label">
+                        <span>Wind Speed</span>
+                        <span class="value-display"><span id="val-wind">15</span> km/h</span>
+                    </div>
+                    <input type="range" id="slider-wind" min="0" max="70" value="15" class="custom-range">
+                </div>
+
+                <div class="slider-group">
+                    <div class="slider-label">
+                        <span>Humidity</span>
+                        <span class="value-display"><span id="val-humidity">60</span>%</span>
+                    </div>
+                    <input type="range" id="slider-humidity" min="10" max="100" value="60" class="custom-range">
+                </div>
+            </div>
+
+            <div class="sidebar-footer">
+                <div class="location-stamp">
+                    <i class="fa-solid fa-location-dot text-red"></i>
+                    <div>
+                        <h4>Ahmedabad GIDC</h4>
+                        <span>Gujarat, India</span>
+                    </div>
+                </div>
+                <div class="time-stamp">
+                    <i class="fa-regular fa-clock"></i>
+                    <span id="live-time">10:00:00 AM IST</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Dashboard Content -->
+        <main class="main-content">
+            <!-- Top Navigation / Header -->
+            <header class="dashboard-header glass">
+                <div class="header-left">
+                    <h1 id="facility-title">Textile Manufacturing (Vatva GIDC)</h1>
+                    <p>AI-Powered Energy Management System • Live Telemetry Mode</p>
+                </div>
+                <div class="header-right">
+                    <div class="status-indicator">
+                        <span class="pulse-dot green-glow"></span>
+                        <span>Grid Health Status: <strong id="grid-status-label">Stable (98%)</strong></span>
+                    </div>
+                    <div class="divider"></div>
+                    <div class="tariff-tag">
+                        <i class="fa-solid fa-money-bill-wave"></i>
+                        <span id="tariff-label">HT Industrial (Torrent Power)</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Hero KPI Banner -->
+            <section class="hero-kpis">
+                <div class="kpi-card glass border-solar glow-hover" id="kpi-capacity">
+                    <div class="kpi-icon icon-solar"><i class="fa-solid fa-solar-panel"></i></div>
+                    <div class="kpi-info">
+                        <h3>Renewable Utilization</h3>
+                        <div class="kpi-value"><span id="metric-renew-pct">46.8</span>%</div>
+                        <p class="kpi-sub"><span id="metric-gen-kwh">1,420</span> kWh generated today</p>
+                    </div>
+                </div>
+
+                <div class="kpi-card glass border-grid glow-hover" id="kpi-stability">
+                    <div class="kpi-icon icon-grid"><i class="fa-solid fa-tower-broadcast"></i></div>
+                    <div class="kpi-info">
+                        <h3>Grid Stability Score</h3>
+                        <div class="kpi-value"><span id="metric-stability">98.42</span>%</div>
+                        <p class="kpi-sub">Continuous frequency locks active</p>
+                    </div>
+                </div>
+
+                <div class="kpi-card glass border-wind glow-hover" id="kpi-accuracy">
+                    <div class="kpi-icon icon-wind"><i class="fa-solid fa-chart-line"></i></div>
+                    <div class="kpi-info">
+                        <h3>Forecast Accuracy</h3>
+                        <div class="kpi-value"><span id="metric-accuracy">95.8</span>%</div>
+                        <p class="kpi-sub">24-hour predictive model variance</p>
+                    </div>
+                </div>
+
+                <div class="kpi-card glass border-demand glow-hover" id="kpi-balance">
+                    <div class="kpi-icon icon-demand"><i class="fa-solid fa-scale-balanced"></i></div>
+                    <div class="kpi-info">
+                        <h3>Energy Surplus/Deficit</h3>
+                        <div class="kpi-value" id="balance-value-wrapper"><span id="metric-balance">-142.5</span> kW</div>
+                        <p class="kpi-sub" id="balance-sub">Importing from state grid</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Grid Layout for Charts & Analytics -->
+            <div class="dashboard-grid">
+                
+                <!-- 1. Forecasting Center (Line Chart) -->
+                <div class="grid-item glass col-span-2 shadow-card" id="forecast-center">
+                    <div class="panel-header">
+                        <div class="panel-title">
+                            <i class="fa-solid fa-chart-area text-orange"></i>
+                            <h3>AI Forecasting & Generation Center</h3>
+                        </div>
+                        <div class="panel-actions">
+                            <button class="tab-btn active" data-range="24h">24 Hours</button>
+                            <button class="tab-btn" data-range="7d">7 Days</button>
+                            <button class="tab-btn" data-range="30d">30 Days</button>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="forecastChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- 2. Interactive Map (Ahmedabad Clusters) -->
+                <div class="grid-item glass shadow-card" id="map-panel">
+                    <div class="panel-header">
+                        <div class="panel-title">
+                            <i class="fa-solid fa-map-location-dot text-cyan"></i>
+                            <h3>Ahmedabad Industrial GIDC GIS Map</h3>
+                        </div>
+                    </div>
+                    <div class="map-container-wrapper">
+                        <div id="map"></div>
+                    </div>
+                </div>
+
+                <!-- 3. Energy Mix Visualization (Flow + Donut) -->
+                <div class="grid-item glass shadow-card" id="energy-mix-panel">
+                    <div class="panel-header">
+                        <div class="panel-title">
+                            <i class="fa-solid fa-arrow-right-arrow-left text-solar"></i>
+                            <h3>Live Power Flow & Energy Mix</h3>
+                        </div>
+                    </div>
+                    <div class="energy-mix-container">
+                        <div class="mix-chart-wrapper">
+                            <canvas id="mixChart"></canvas>
+                        </div>
+                        <div class="mix-legend">
+                            <div class="legend-row">
+                                <span class="legend-dot bg-solar"></span>
+                                <span class="legend-name">Solar Generation</span>
+                                <strong class="legend-val" id="legend-solar">0 kW</strong>
+                            </div>
+                            <div class="legend-row">
+                                <span class="legend-dot bg-wind"></span>
+                                <span class="legend-name">Wind Generation</span>
+                                <strong class="legend-val" id="legend-wind">0 kW</strong>
+                            </div>
+                            <div class="legend-row">
+                                <span class="legend-dot bg-battery"></span>
+                                <span class="legend-name">Battery Storage</span>
+                                <strong class="legend-val" id="legend-battery">0 kW</strong>
+                            </div>
+                            <div class="legend-row">
+                                <span class="legend-dot bg-demand"></span>
+                                <span class="legend-name">Grid Import</span>
+                                <strong class="legend-val" id="legend-grid">0 kW</strong>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Live animated energy flows -->
+                    <div class="energy-flow-visual">
+                        <div class="flow-node solar-node">
+                            <i class="fa-solid fa-sun text-solar"></i>
+                            <span>Solar</span>
+                        </div>
+                        <div class="flow-node wind-node">
+                            <i class="fa-solid fa-wind text-wind"></i>
+                            <span>Wind</span>
+                        </div>
+                        <div class="flow-hub">
+                            <div class="flow-arrow arrow-solar"></div>
+                            <div class="flow-arrow arrow-wind"></div>
+                            <div class="flow-center-icon"><i class="fa-solid fa-circle-nodes text-primary-glow"></i></div>
+                            <div class="flow-arrow arrow-factory"></div>
+                            <div class="flow-arrow arrow-battery"></div>
+                        </div>
+                        <div class="flow-node battery-node">
+                            <i class="fa-solid fa-battery-three-quarters text-battery"></i>
+                            <span>Battery</span>
+                        </div>
+                        <div class="flow-node factory-node">
+                            <i class="fa-solid fa-industry text-orange"></i>
+                            <span>MSME</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4. Storage Optimization Module -->
+                <div class="grid-item glass shadow-card" id="storage-panel">
+                    <div class="panel-header">
+                        <div class="panel-title">
+                            <i class="fa-solid fa-battery-full text-battery"></i>
+                            <h3>Battery Storage Optimization</h3>
+                        </div>
+                    </div>
+                    <div class="battery-details">
+                        <div class="battery-visual-wrapper">
+                            <div class="battery-outer">
+                                <div class="battery-cap"></div>
+                                <div class="battery-inner" id="battery-fill-level" style="height: 40%;">
+                                    <div class="battery-charge-bubbles"></div>
+                                </div>
+                                <span class="battery-percentage-text" id="battery-percentage-display">40%</span>
+                            </div>
+                            <div class="battery-actions-stamp">
+                                <h4 id="battery-status-action">IDLE</h4>
+                                <p id="battery-status-rate">0 kW power transfer</p>
+                            </div>
+                        </div>
+                        <div class="battery-stats">
+                            <div class="stat-col">
+                                <span>Design Capacity</span>
+                                <strong id="battery-cap-display">500 kWh</strong>
+                            </div>
+                            <div class="stat-col">
+                                <span>State of Health</span>
+                                <strong class="text-green">98.2%</strong>
+                            </div>
+                            <div class="stat-col">
+                                <span>Cycle Count</span>
+                                <strong>124 / 3500</strong>
+                            </div>
+                            <div class="stat-col">
+                                <span>Operating Temp</span>
+                                <strong>31.5 °C</strong>
+                            </div>
+                        </div>
+                        <div class="battery-schedule">
+                            <h4>Target Schedule</h4>
+                            <div class="schedule-track">
+                                <div class="schedule-block bg-dim-green">00-06 Off-Peak Charge</div>
+                                <div class="schedule-block bg-dim-solar">11-15 Solar Storage</div>
+                                <div class="schedule-block bg-dim-red">18-22 Peak Discharge</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 5. Weather Impact Panel -->
+                <div class="grid-item glass shadow-card" id="weather-impact-panel">
+                    <div class="panel-header">
+                        <div class="panel-title">
+                            <i class="fa-solid fa-temperature-arrow-up text-solar"></i>
+                            <h3>Weather Generation Impact</h3>
+                        </div>
+                    </div>
+                    <div class="impact-grid">
+                        <div class="impact-card">
+                            <span class="impact-title">Solar Impact Score</span>
+                            <div class="impact-metric text-solar"><span id="impact-solar-score">82</span>/100</div>
+                            <div class="impact-progress-bar"><div class="bar-fill bg-solar" id="bar-solar-impact" style="width: 82%;"></div></div>
+                            <p class="impact-note" id="solar-impact-note">Operating efficiently. Peak thermal loss: 2.8%.</p>
+                        </div>
+                        <div class="impact-card">
+                            <span class="impact-title">Wind Impact Score</span>
+                            <div class="impact-metric text-wind"><span id="impact-wind-score">50</span>/100</div>
+                            <div class="impact-progress-bar"><div class="bar-fill bg-wind" id="bar-wind-impact" style="width: 50%;"></div></div>
+                            <p class="impact-note" id="wind-impact-note">Moderate breeze, operating at partial capacity.</p>
+                        </div>
+                        <div class="impact-card">
+                            <span class="impact-title">Climate Alert Level</span>
+                            <div class="impact-metric text-green" id="impact-risk-label">Nominal</div>
+                            <p class="impact-note">No extreme weather alerts in Ahmedabad zone.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 6. Smart Grid Insights & AI Recommendations -->
+                <div class="grid-item glass shadow-card" id="recommendations-panel">
+                    <div class="panel-header">
+                        <div class="panel-title">
+                            <i class="fa-solid fa-lightbulb text-green"></i>
+                            <h3>Smart Grid Insights & Actions</h3>
+                        </div>
+                    </div>
+                    <div class="recommendation-list" id="recommendations-list-wrapper">
+                        <!-- Loaded dynamically -->
+                        <div class="rec-loading"><i class="fa-solid fa-spinner fa-spin"></i> Analyzing energy flows...</div>
+                    </div>
+                </div>
+
+                <!-- 7. Demand & Consumption Analytics -->
+                <div class="grid-item glass shadow-card" id="demand-panel">
+                    <div class="panel-header">
+                        <div class="panel-title">
+                            <i class="fa-solid fa-fire text-orange"></i>
+                            <h3>Demand Segmentation</h3>
+                        </div>
+                    </div>
+                    <div class="demand-chart-wrapper">
+                        <canvas id="demandSegmentationChart"></canvas>
+                    </div>
+                    <div class="demand-insights">
+                        <div class="demand-stat-row">
+                            <span>Peak Consumption Hour</span>
+                            <strong class="text-orange" id="peak-hour-label">12:00 PM</strong>
+                        </div>
+                        <div class="demand-stat-row">
+                            <span>Base HVAC draw</span>
+                            <strong id="hvac-draw-label">42 kW</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 8. Alerts & Risk Center -->
+                <div class="grid-item glass shadow-card border-red-glow" id="alerts-panel">
+                    <div class="panel-header">
+                        <div class="panel-title">
+                            <i class="fa-solid fa-triangle-exclamation text-red pulse"></i>
+                            <h3>Alerts & Risk Center</h3>
+                        </div>
+                    </div>
+                    <div class="alerts-list" id="alerts-list-wrapper">
+                        <!-- Loaded dynamically -->
+                    </div>
+                </div>
+
+                <!-- 9. Impact Metrics & ESG Scorecard -->
+                <div class="grid-item glass shadow-card col-span-2" id="impact-metrics-panel">
+                    <div class="panel-header">
+                        <div class="panel-title">
+                            <i class="fa-solid fa-leaf text-green"></i>
+                            <h3>Impact Metrics & ESG Scorecard</h3>
+                        </div>
+                    </div>
+                    <div class="impact-metrics-layout">
+                        <div class="metric-box">
+                            <i class="fa-solid fa-indian-rupee-sign text-green"></i>
+                            <div class="metric-box-info">
+                                <span class="label">Financial Savings</span>
+                                <h3 class="value text-green">₹<span id="esg-savings">4,85,320</span></h3>
+                                <span class="sub">Saved vs 100% grid draw</span>
+                            </div>
+                        </div>
+
+                        <div class="metric-box">
+                            <i class="fa-solid fa-cloud-arrow-down text-cyan"></i>
+                            <div class="metric-box-info">
+                                <span class="label">Carbon Offsets</span>
+                                <h3 class="value text-cyan"><span id="esg-co2">32.4</span> tCO₂</h3>
+                                <span class="sub">Displaced grid coal generation</span>
+                            </div>
+                        </div>
+
+                        <div class="metric-box">
+                            <i class="fa-solid fa-tree text-solar"></i>
+                            <div class="metric-box-info">
+                                <span class="label">Equivalent Trees</span>
+                                <h3 class="value text-solar"><span id="esg-trees">1,480</span></h3>
+                                <span class="sub">Annual carbon capture equivalent</span>
+                            </div>
+                        </div>
+
+                        <div class="metric-box">
+                            <i class="fa-solid fa-percent text-battery"></i>
+                            <div class="metric-box-info">
+                                <span class="label">Factory Efficiency</span>
+                                <h3 class="value text-battery">+<span id="esg-eff">14.6</span>%</h3>
+                                <span class="sub">Through intelligent machine timing</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 10. AI Energy Copilot Chatbot (Fully Embedded) -->
+                <div class="grid-item glass shadow-card col-span-2 border-primary-glow" id="copilot-panel">
+                    <div class="panel-header">
+                        <div class="panel-title">
+                            <i class="fa-solid fa-robot text-primary-glow"></i>
+                            <h3>AI Energy Copilot (Chatbot)</h3>
+                        </div>
+                        <div class="panel-actions">
+                            <button class="action-btn" id="btn-export-report"><i class="fa-solid fa-file-pdf"></i> Daily Audit</button>
+                            <button class="action-btn" id="btn-clear-chat"><i class="fa-solid fa-trash-can"></i> Reset</button>
+                        </div>
+                    </div>
+                    
+                    <div class="copilot-chat-container">
+                        <!-- Message Log -->
+                        <div class="chat-log" id="chat-history-log">
+                            <div class="chat-message bot-msg">
+                                <div class="bot-avatar"><i class="fa-solid fa-robot"></i></div>
+                                <div class="msg-bubble">
+                                    <p>Namaste! I am your <strong>AetherGrid AI Copilot</strong> specialized in Ahmedabad GIDC energy optimization. How can I assist you with your machine scheduling, solar predictions, or Torrent Power bills today?</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Suggestion Chips -->
+                        <div class="suggestion-chips-container">
+                            <button class="chip-btn" data-query="When should I run heavy machines?">When should I run heavy machines?</button>
+                            <button class="chip-btn" data-query="How does cloud cover affect my solar output today?">How does cloud cover affect solar?</button>
+                            <button class="chip-btn" data-query="How can I reduce my Torrent Power electricity bill?">How can I reduce my bill?</button>
+                            <button class="chip-btn" data-query="Recommend battery storage charge schedule.">Battery charge schedule</button>
+                        </div>
+
+                        <!-- Input Area -->
+                        <div class="chat-input-area">
+                            <input type="text" id="chat-input-text" placeholder="Ask Copilot about machine scheduling, solar capacity, or billing..." autocomplete="off">
+                            <button id="btn-send-message" class="send-btn"><i class="fa-solid fa-paper-plane"></i></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- App Scripts -->
+    <script src="js/map.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
