@@ -32,6 +32,11 @@
                 </div>
             </div>
 
+            <nav class="sidebar-menu">
+                <a href="#" class="nav-item active" id="nav-dashboard"><i class="fa-solid fa-chart-pie"></i> Live Dashboard</a>
+                <a href="#" class="nav-item" id="nav-audit"><i class="fa-solid fa-calculator"></i> Energy Audit</a>
+            </nav>
+
             <div class="control-section">
                 <h3><i class="fa-solid fa-industry"></i> MSME Profile Selector</h3>
                 <div class="input-wrapper">
@@ -101,7 +106,8 @@
 
         <!-- Main Dashboard Content -->
         <main class="main-content">
-            <!-- Top Navigation / Header -->
+            <div id="view-dashboard" class="dashboard-view-wrapper">
+                <!-- Top Navigation / Header -->
             <header class="dashboard-header glass">
                 <div class="header-left">
                     <h1 id="facility-title">Textile Manufacturing (Vatva GIDC)</h1>
@@ -473,6 +479,144 @@
                     </div>
                 </div>
             </div>
+            </div>
+            <!-- End Dashboard Telemetry View -->
+
+            <!-- Energy Audit Calculator View -->
+            <div id="view-audit" class="audit-view-wrapper" style="display: none;">
+                <header class="dashboard-header glass">
+                    <div class="header-left">
+                        <h1>Energy Audit & Calculator</h1>
+                        <p>Simulate, calculate, and audit your total plant machinery energy consumption.</p>
+                    </div>
+                    <div class="header-right">
+                        <button class="action-btn" id="btn-load-template"><i class="fa-solid fa-file-import text-green"></i> Load MSME Template</button>
+                    </div>
+                </header>
+
+                <div class="dashboard-grid">
+                    <!-- 1. Interactive Inventory Table -->
+                    <div class="grid-item glass col-span-2 shadow-card" id="audit-table-panel">
+                        <div class="panel-header">
+                            <div class="panel-title">
+                                <i class="fa-solid fa-list-check text-solar"></i>
+                                <h3>Machinery & Equipment Inventory</h3>
+                            </div>
+                            <div class="panel-actions">
+                                <button class="action-btn" id="btn-clear-audit-rows" style="border-color: rgba(239, 68, 68, 0.2); color: var(--color-risk);"><i class="fa-solid fa-trash-can"></i> Clear All</button>
+                            </div>
+                        </div>
+
+                        <div class="table-container" style="overflow-x: auto; width: 100%; margin-top: 10px;">
+                            <table class="audit-table" style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px;">
+                                <thead>
+                                    <tr style="border-bottom: 1px solid var(--border-color); color: var(--color-text-secondary);">
+                                        <th style="padding: 10px 8px;">Equipment Name</th>
+                                        <th style="padding: 10px 8px;">Category</th>
+                                        <th style="padding: 10px 8px;">Power (kW)</th>
+                                        <th style="padding: 10px 8px;">Qty</th>
+                                        <th style="padding: 10px 8px;">Hours/Day</th>
+                                        <th style="padding: 10px 8px;">Daily (kWh)</th>
+                                        <th style="padding: 10px 8px; text-align: center;">Remove</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="audit-table-tbody">
+                                    <!-- Loaded dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- 2. Audit Totals Summary -->
+                    <div class="grid-item glass shadow-card" id="audit-totals-panel">
+                        <div class="panel-header">
+                            <div class="panel-title">
+                                <i class="fa-solid fa-calculator text-green"></i>
+                                <h3>Audit Totals & Estimates</h3>
+                            </div>
+                        </div>
+                        <div class="audit-summary-content" style="display: flex; flex-direction: column; gap: 14px;">
+                            <div class="summary-metric" style="border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">
+                                <span style="font-size: 10px; color: var(--color-text-secondary); text-transform: uppercase;">Total Connected Load</span>
+                                <h2 style="font-family: var(--font-heading); font-size: 22px; font-weight: 700; color: var(--color-solar); margin-top: 2px;"><span id="audit-total-load">0.0</span> kW</h2>
+                            </div>
+                            <div class="summary-metric" style="border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">
+                                <span style="font-size: 10px; color: var(--color-text-secondary); text-transform: uppercase;">Daily Energy Consumption</span>
+                                <h2 style="font-family: var(--font-heading); font-size: 22px; font-weight: 700; color: var(--color-wind); margin-top: 2px;"><span id="audit-total-daily-kwh">0.0</span> kWh</h2>
+                            </div>
+                            <div class="summary-metric" style="border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">
+                                <span style="font-size: 10px; color: var(--color-text-secondary); text-transform: uppercase;">Estimated Monthly Cost</span>
+                                <h2 style="font-family: var(--font-heading); font-size: 22px; font-weight: 700; color: var(--color-grid); margin-top: 2px;">₹<span id="audit-total-cost">0.00</span></h2>
+                                <span style="font-size: 9.5px; color: var(--color-text-secondary);">Calculated at avg ₹7.5/kWh base tariff</span>
+                            </div>
+                            <div class="summary-metric" style="padding-bottom: 5px;">
+                                <span style="font-size: 10px; color: var(--color-text-secondary); text-transform: uppercase;">Est. Annual CO₂ Footprint</span>
+                                <h2 style="font-family: var(--font-heading); font-size: 22px; font-weight: 700; color: var(--color-risk); margin-top: 2px;"><span id="audit-total-co2">0.0</span> Tons</h2>
+                                <span style="font-size: 9.5px; color: var(--color-text-secondary);">India Grid Factor: 0.82 kg CO₂/kWh</span>
+                            </div>
+                            <button class="send-btn w-full" id="btn-sync-audit" style="margin-top: 10px; padding: 10px; font-weight: 600; font-family: var(--font-primary); font-size: 12.5px;">
+                                <i class="fa-solid fa-sync"></i> Analyze Audit with AI Copilot
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 3. Add Custom Machinery Form -->
+                    <div class="grid-item glass col-span-2 shadow-card" id="audit-form-panel">
+                        <div class="panel-header">
+                            <div class="panel-title">
+                                <i class="fa-solid fa-plus-minus text-orange"></i>
+                                <h3>Add Custom Equipment Row</h3>
+                            </div>
+                        </div>
+                        <form id="add-audit-item-form" style="display: grid; grid-template-columns: 2fr 1.5fr 1fr 1fr 1fr auto; gap: 12px; align-items: flex-end;" onsubmit="return false;">
+                            <div class="form-group" style="display: flex; flex-direction: column; gap: 6px;">
+                                <label style="font-size: 11px; color: var(--color-text-secondary);">Equipment Name</label>
+                                <input type="text" id="audit-item-name" placeholder="e.g., HVAC Compressor, CNC lathe" required class="custom-input" style="padding: 10px; background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); border-radius: var(--radius-md); color: white; font-size: 12.5px; outline: none; width: 100%;">
+                            </div>
+                            <div class="form-group" style="display: flex; flex-direction: column; gap: 6px;">
+                                <label style="font-size: 11px; color: var(--color-text-secondary);">Category</label>
+                                <select id="audit-item-category" class="custom-select">
+                                    <option value="HVAC">HVAC & Cooling</option>
+                                    <option value="Process Heating">Process Heating</option>
+                                    <option value="Mechanical">Mechanical / Motors</option>
+                                    <option value="Lighting">Lighting & Auxiliaries</option>
+                                    <option value="Other">Other Load</option>
+                                </select>
+                            </div>
+                            <div class="form-group" style="display: flex; flex-direction: column; gap: 6px;">
+                                <label style="font-size: 11px; color: var(--color-text-secondary);">Power (kW)</label>
+                                <input type="number" id="audit-item-power" min="0.01" step="0.01" value="15" required class="custom-input" style="padding: 10px; background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); border-radius: var(--radius-md); color: white; font-size: 12.5px; outline: none; width: 100%;">
+                            </div>
+                            <div class="form-group" style="display: flex; flex-direction: column; gap: 6px;">
+                                <label style="font-size: 11px; color: var(--color-text-secondary);">Qty</label>
+                                <input type="number" id="audit-item-qty" min="1" step="1" value="1" required class="custom-input" style="padding: 10px; background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); border-radius: var(--radius-md); color: white; font-size: 12.5px; outline: none; width: 100%;">
+                            </div>
+                            <div class="form-group" style="display: flex; flex-direction: column; gap: 6px;">
+                                <label style="font-size: 11px; color: var(--color-text-secondary);">Hours/Day</label>
+                                <input type="number" id="audit-item-hours" min="0.1" max="24" step="0.1" value="8" required class="custom-input" style="padding: 10px; background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); border-radius: var(--radius-md); color: white; font-size: 12.5px; outline: none; width: 100%;">
+                            </div>
+                            <button type="submit" class="send-btn" id="btn-add-audit-row" style="height: 38px; padding: 0 16px; font-weight: 500;">
+                                <i class="fa-solid fa-plus"></i> Add Item
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- 4. Load Distribution Chart -->
+                    <div class="grid-item glass shadow-card" id="audit-chart-panel">
+                        <div class="panel-header">
+                            <div class="panel-title">
+                                <i class="fa-solid fa-chart-pie text-battery"></i>
+                                <h3>Load Distribution</h3>
+                            </div>
+                        </div>
+                        <div class="chart-container" style="height: 220px; position: relative;">
+                            <canvas id="auditChart"></canvas>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+            <!-- End Energy Audit Calculator View -->
         </main>
     </div>
 

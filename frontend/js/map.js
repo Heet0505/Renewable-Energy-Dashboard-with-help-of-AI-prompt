@@ -7,37 +7,37 @@ const CLUSTERS = {
     textile: {
         name: "Vatva GIDC (Textile Sector)",
         coords: [22.9602, 72.6322],
-        color: "#FFC857", // Solar yellow
+        color: "#E2B13C", // Muted Gold
         industry: "Textile manufacturing & sizing units"
     },
     pharmaceutical: {
         name: "Naroda GIDC (Pharma Sector)",
         coords: [23.0722, 72.6515],
-        color: "#7B61FF", // Battery purple
+        color: "#6366F1", // Indigo
         industry: "Active Pharmaceutical Ingredients (API) plants"
     },
     chemical: {
         name: "Vatva GIDC (Chemical Sector)",
         coords: [22.9550, 72.6450],
-        color: "#2EC4B6", // Wind cyan
+        color: "#0EA5E9", // Sky Blue
         industry: "Chemical dyestuff & intermediates plants"
     },
     engineering: {
         name: "Odhav GIDC (Engineering Sector)",
         coords: [23.0315, 72.6612],
-        color: "#FF8C42", // Demand orange
+        color: "#EA580C", // Rust Orange
         industry: "Metal fabrication & machine shops"
     },
     packaging: {
         name: "Changodar Industrial Area",
         coords: [22.9234, 72.4412],
-        color: "#2ECC71", // Grid green
+        color: "#10B981", // Emerald Green
         industry: "Flexible packaging & corrugated printing lines"
     },
     food_processing: {
         name: "Kathwada GIDC (Food Sector)",
         coords: [23.0545, 72.6888],
-        color: "#FF5A5F", // Risk red
+        color: "#EF4444", // Soft Crimson
         industry: "Food processing & refrigeration storage units"
     }
 };
@@ -135,16 +135,16 @@ function initDashboardMap() {
             }
         }
         .leaflet-popup-content-wrapper {
-            background: #131926 !important;
+            background: #0c0e14 !important;
             color: #fff !important;
-            border: 1px solid rgba(255, 255, 255, 0.08) !important;
+            border: 1px solid rgba(255, 255, 255, 0.05) !important;
             backdrop-filter: blur(8px) !important;
-            border-radius: 8px !important;
+            border-radius: 6px !important;
             padding: 8px 12px !important;
         }
         .leaflet-popup-tip {
-            background: #131926 !important;
-            border: 1px solid rgba(255, 255, 255, 0.08) !important;
+            background: #0c0e14 !important;
+            border: 1px solid rgba(255, 255, 255, 0.05) !important;
         }
     `;
     document.head.appendChild(styleElement);

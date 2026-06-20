@@ -63,9 +63,9 @@ function initCharts() {
                 {
                     label: 'Demand (kW)',
                     data: [],
-                    borderColor: '#FF8C42', // Demand Orange
-                    backgroundColor: 'rgba(255, 140, 66, 0.1)',
-                    borderWidth: 2,
+                    borderColor: '#EA580C', // Demand Rust Orange
+                    backgroundColor: 'rgba(234, 88, 12, 0.05)',
+                    borderWidth: 1.5,
                     fill: true,
                     tension: 0.3,
                     yAxisID: 'y'
@@ -73,37 +73,37 @@ function initCharts() {
                 {
                     label: 'Solar Gen (kW)',
                     data: [],
-                    borderColor: '#FFC857', // Solar Yellow
+                    borderColor: '#E2B13C', // Solar Muted Gold
                     backgroundColor: 'transparent',
-                    borderWidth: 2,
+                    borderWidth: 1.5,
                     tension: 0.3,
                     yAxisID: 'y'
                 },
                 {
                     label: 'Wind Gen (kW)',
                     data: [],
-                    borderColor: '#2EC4B6', // Wind Cyan
+                    borderColor: '#0EA5E9', // Wind Sky Blue
                     backgroundColor: 'transparent',
-                    borderWidth: 2,
+                    borderWidth: 1.5,
                     tension: 0.3,
                     yAxisID: 'y'
                 },
                 {
                     label: 'Battery Charge (%)',
                     data: [],
-                    borderColor: '#7B61FF', // Battery Purple
-                    backgroundColor: 'rgba(123, 97, 255, 0.05)',
-                    borderWidth: 1.5,
-                    borderDash: [5, 5],
+                    borderColor: '#6366F1', // Battery Indigo
+                    backgroundColor: 'rgba(99, 102, 241, 0.03)',
+                    borderWidth: 1.2,
+                    borderDash: [4, 4],
                     tension: 0.2,
                     yAxisID: 'y1'
                 },
                 {
                     label: 'Grid Import (kW)',
                     data: [],
-                    borderColor: '#2ECC71', // Grid Health Green
+                    borderColor: '#10B981', // Grid Emerald Green
                     backgroundColor: 'transparent',
-                    borderWidth: 1.5,
+                    borderWidth: 1.2,
                     tension: 0.3,
                     yAxisID: 'y'
                 }
@@ -161,13 +161,13 @@ function initCharts() {
             datasets: [{
                 data: [0, 0, 0, 0],
                 backgroundColor: [
-                    '#FFC857', // Solar Warm Yellow
-                    '#2EC4B6', // Wind Cyan
-                    '#7B61FF', // Battery Purple
-                    '#2ECC71'  // Grid Green
+                    '#E2B13C', // Solar Muted Gold
+                    '#0EA5E9', // Wind Sky Blue
+                    '#6366F1', // Battery Indigo
+                    '#10B981'  // Grid Emerald Green
                 ],
-                borderWidth: 1,
-                borderColor: '#131926'
+                borderWidth: 1.5,
+                borderColor: '#0a0d14'
             }]
         },
         options: {
@@ -188,9 +188,9 @@ function initCharts() {
             datasets: [{
                 label: 'Consumption Share (kW)',
                 data: [0, 0, 0, 0],
-                backgroundColor: 'rgba(255, 140, 66, 0.75)',
-                borderColor: '#FF8C42',
-                borderWidth: 1,
+                backgroundColor: 'rgba(234, 88, 12, 0.15)',
+                borderColor: '#EA580C',
+                borderWidth: 1.5,
                 borderRadius: 4
             }]
         },
@@ -361,7 +361,7 @@ function updateDashboardDOM(data) {
         const flowKw = Math.max(5, Math.round((lastRecord.solar_gen + lastRecord.wind_gen - lastRecord.demand) * 0.6));
         batteryRateLabel.textContent = `Storing +${flowKw} kW excess power`;
     } else if (lastRecord.battery_action === "Discharging") {
-        batteryStatusLabel.className = "text-risk";
+        batteryStatusLabel.className = "text-red";
         const flowKw = Math.round(lastRecord.demand - (lastRecord.solar_gen + lastRecord.wind_gen));
         batteryRateLabel.textContent = `Discharging ${flowKw} kW to load`;
     } else {
@@ -862,4 +862,363 @@ function setupEventListeners() {
         `);
         reportWindow.document.close();
     });
+
+    // --- Energy Audit & Calculator Event Listeners ---
+    
+    const navDashboard = document.getElementById("nav-dashboard");
+    const navAudit = document.getElementById("nav-audit");
+    const viewDashboard = document.getElementById("view-dashboard");
+    const viewAudit = document.getElementById("view-audit");
+
+    navDashboard.addEventListener("click", (e) => {
+        e.preventDefault();
+        navAudit.classList.remove("active");
+        navDashboard.classList.add("active");
+        viewAudit.style.display = "none";
+        viewDashboard.style.display = "block";
+        
+        // Force Leaflet map layout redraw since container display was none
+        if (typeof map !== "undefined" && map) {
+            setTimeout(() => {
+                map.invalidateSize();
+            }, 100);
+        }
+    });
+
+    navAudit.addEventListener("click", (e) => {
+        e.preventDefault();
+        navDashboard.classList.remove("active");
+        navAudit.classList.add("active");
+        viewDashboard.style.display = "none";
+        viewAudit.style.display = "block";
+        
+        // If inventory is empty, auto-load template of currently selected profile
+        if (auditInventory.length === 0) {
+            const profileVal = document.getElementById("msme-profile-selector").value;
+            loadAuditTemplate(profileVal);
+        }
+    });
+
+    document.getElementById("btn-load-template").addEventListener("click", () => {
+        const profileVal = document.getElementById("msme-profile-selector").value;
+        loadAuditTemplate(profileVal);
+    });
+
+    document.getElementById("btn-clear-audit-rows").addEventListener("click", () => {
+        auditInventory = [];
+        renderAuditTable();
+        calculateAuditTotals();
+    });
+
+    document.getElementById("btn-sync-audit").addEventListener("click", () => {
+        syncAuditToCopilot();
+    });
+
+    document.getElementById("add-audit-item-form").addEventListener("submit", (e) => {
+        e.preventDefault();
+        
+        const nameInput = document.getElementById("audit-item-name");
+        const catInput = document.getElementById("audit-item-category");
+        const powerInput = document.getElementById("audit-item-power");
+        const qtyInput = document.getElementById("audit-item-qty");
+        const hoursInput = document.getElementById("audit-item-hours");
+        
+        const name = nameInput.value.trim();
+        const category = catInput.value;
+        const power = parseFloat(powerInput.value);
+        const qty = parseInt(qtyInput.value);
+        const hours = parseFloat(hoursInput.value);
+        
+        if (name && !isNaN(power) && !isNaN(qty) && !isNaN(hours)) {
+            auditInventory.push({
+                id: "item_" + Math.random().toString(36).substr(2, 9),
+                name: name,
+                category: category,
+                power: power,
+                qty: qty,
+                hours: hours
+            });
+            
+            // Reset form fields
+            nameInput.value = "";
+            powerInput.value = "15";
+            qtyInput.value = "1";
+            hoursInput.value = "8";
+            
+            renderAuditTable();
+            calculateAuditTotals();
+        }
+    });
 }
+
+// --- Energy Audit Calculator Engine & Data ---
+
+const AUDIT_TEMPLATES = {
+    textile: [
+        { name: "Ring Spinning Frames", category: "Mechanical", power: 45, qty: 6, hours: 16 },
+        { name: "Weaving Looms", category: "Mechanical", power: 15, qty: 12, hours: 16 },
+        { name: "Dyeing Jet Machines", category: "Process Heating", power: 75, qty: 2, hours: 8 },
+        { name: "Air Compressors", category: "Mechanical", power: 30, qty: 2, hours: 24 },
+        { name: "Humidification Plant", category: "HVAC", power: 40, qty: 1, hours: 24 },
+        { name: "Factory Shed Lighting", category: "Lighting", power: 8, qty: 1, hours: 12 }
+    ],
+    pharmaceutical: [
+        { name: "AHU Cleanroom HVAC", category: "HVAC", power: 110, qty: 2, hours: 24 },
+        { name: "Cold Storage Compression", category: "HVAC", power: 45, qty: 2, hours: 24 },
+        { name: "Formulation Mixers", category: "Mechanical", power: 25, qty: 4, hours: 8 },
+        { name: "Autoclave Sterilizer", category: "Process Heating", power: 60, qty: 2, hours: 6 },
+        { name: "Blister Packaging Lines", category: "Mechanical", power: 15, qty: 3, hours: 12 },
+        { name: "Laboratory HVAC & Aux", category: "HVAC", power: 35, qty: 1, hours: 12 }
+    ],
+    chemical: [
+        { name: "Glass Lined Reactors", category: "Mechanical", power: 18, qty: 8, hours: 24 },
+        { name: "Boiler Feed Pumps", category: "Mechanical", power: 30, qty: 2, hours: 24 },
+        { name: "Steam Heat Exchanger", category: "Process Heating", power: 120, qty: 1, hours: 12 },
+        { name: "Cooling Towers", category: "HVAC", power: 22, qty: 3, hours: 24 },
+        { name: "Centrifuge Extractors", category: "Mechanical", power: 15, qty: 4, hours: 10 },
+        { name: "Effluent Treatment Plant", category: "Mechanical", power: 25, qty: 1, hours: 24 }
+    ],
+    engineering: [
+        { name: "MIG/TIG Welding Stations", category: "Other", power: 12, qty: 15, hours: 8 },
+        { name: "CNC Turning Lathes", category: "Mechanical", power: 22, qty: 6, hours: 12 },
+        { name: "Hydraulic Press (100T)", category: "Mechanical", power: 45, qty: 2, hours: 8 },
+        { name: "Air Plasma Cutter", category: "Other", power: 30, qty: 1, hours: 6 },
+        { name: "Overhead Gantry Cranes", category: "Mechanical", power: 15, qty: 2, hours: 4 },
+        { name: "Workshop Ventilation & Aux", category: "HVAC", power: 12, qty: 1, hours: 10 }
+    ],
+    packaging: [
+        { name: "Rotogravure Printing Line", category: "Mechanical", power: 85, qty: 1, hours: 16 },
+        { name: "High Speed Slitting Machines", category: "Mechanical", power: 12, qty: 4, hours: 12 },
+        { name: "Dry Lamination Machine", category: "Process Heating", power: 45, qty: 2, hours: 16 },
+        { name: "Extrusion Coating Line", category: "Mechanical", power: 60, qty: 1, hours: 24 },
+        { name: "Air Chiller Systems", category: "HVAC", power: 30, qty: 1, hours: 24 },
+        { name: "Warehouse Highbay Lights", category: "Lighting", power: 5, qty: 1, hours: 10 }
+    ],
+    food_processing: [
+        { name: "Pasteurization System", category: "Process Heating", power: 90, qty: 1, hours: 8 },
+        { name: "Blast Freezer Compressors", category: "HVAC", power: 55, qty: 2, hours: 24 },
+        { name: "Cold Storage Rooms", category: "HVAC", power: 25, qty: 4, hours: 24 },
+        { name: "Homogenizer Pump", category: "Mechanical", power: 30, qty: 1, hours: 6 },
+        { name: "Bottling & Packing Conveyors", category: "Mechanical", power: 11, qty: 4, hours: 12 },
+        { name: "CIP Cleaning Heater", category: "Process Heating", power: 40, qty: 1, hours: 4 }
+    ]
+};
+
+let auditInventory = [];
+let auditChart = null;
+
+function loadAuditTemplate(sectorId) {
+    const template = AUDIT_TEMPLATES[sectorId] || AUDIT_TEMPLATES["textile"];
+    auditInventory = template.map(item => ({
+        id: "item_" + Math.random().toString(36).substr(2, 9),
+        name: item.name,
+        category: item.category,
+        power: item.power,
+        qty: item.qty,
+        hours: item.hours
+    }));
+    renderAuditTable();
+    calculateAuditTotals();
+}
+
+function renderAuditTable() {
+    const tbody = document.getElementById("audit-table-tbody");
+    tbody.innerHTML = "";
+    
+    if (auditInventory.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="7" style="text-align: center; color: var(--color-text-secondary); padding: 30px 10px;">
+                    <i class="fa-solid fa-calculator" style="font-size: 24px; margin-bottom: 8px; display: block; opacity: 0.5;"></i>
+                    No machinery added yet. Click "Load MSME Template" or fill the form below.
+                </td>
+            </tr>
+        `;
+        return;
+    }
+    
+    auditInventory.forEach(item => {
+        const row = document.createElement("tr");
+        row.style.borderBottom = "1px solid var(--border-color)";
+        
+        const dailyKwh = (item.power * item.qty * item.hours).toFixed(1);
+        
+        row.innerHTML = `
+            <td style="padding: 10px 8px; font-weight: 500; color: var(--color-text-primary);">${escapeHTML(item.name)}</td>
+            <td style="padding: 10px 8px; color: var(--color-text-secondary);"><span class="legend-dot" style="background-color: ${getCategoryColor(item.category)}; margin-right: 6px; display: inline-block; width: 6px; height: 6px; border-radius: 50%;"></span>${item.category}</td>
+            <td style="padding: 10px 8px;">
+                <input type="number" step="0.1" min="0.1" value="${item.power}" class="custom-input" style="width: 70px; padding: 4px 6px; background: rgba(0,0,0,0.15);" onchange="updateAuditRow('${item.id}', 'power', this.value)">
+            </td>
+            <td style="padding: 10px 8px;">
+                <input type="number" step="1" min="1" value="${item.qty}" class="custom-input" style="width: 55px; padding: 4px 6px; background: rgba(0,0,0,0.15);" onchange="updateAuditRow('${item.id}', 'qty', this.value)">
+            </td>
+            <td style="padding: 10px 8px;">
+                <input type="number" step="0.5" min="0.5" max="24" value="${item.hours}" class="custom-input" style="width: 55px; padding: 4px 6px; background: rgba(0,0,0,0.15);" onchange="updateAuditRow('${item.id}', 'hours', this.value)">
+            </td>
+            <td style="padding: 10px 8px; font-weight: 600; color: var(--color-text-primary);">${dailyKwh} kWh</td>
+            <td style="padding: 10px 8px; text-align: center;">
+                <button class="action-btn" style="border: none; background: transparent; padding: 4px; color: var(--color-risk); cursor: pointer;" onclick="deleteAuditRow('${item.id}')">
+                    <i class="fa-solid fa-trash-can"></i>
+                </button>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+function getCategoryColor(category) {
+    switch (category) {
+        case "HVAC": return "var(--color-wind)";
+        case "Process Heating": return "var(--color-demand)";
+        case "Mechanical": return "var(--color-battery)";
+        case "Lighting": return "var(--color-solar)";
+        default: return "var(--color-text-secondary)";
+    }
+}
+
+function updateAuditRow(id, field, value) {
+    const item = auditInventory.find(i => i.id === id);
+    if (item) {
+        const val = parseFloat(value);
+        if (!isNaN(val) && val >= 0) {
+            item[field] = val;
+            calculateAuditTotals();
+            const tbody = document.getElementById("audit-table-tbody");
+            const rows = tbody.getElementsByTagName("tr");
+            const idx = auditInventory.indexOf(item);
+            if (idx !== -1 && rows[idx]) {
+                const cells = rows[idx].getElementsByTagName("td");
+                const dailyCell = cells[5];
+                dailyCell.textContent = `${(item.power * item.qty * item.hours).toFixed(1)} kWh`;
+            }
+        }
+    }
+}
+
+function deleteAuditRow(id) {
+    auditInventory = auditInventory.filter(item => item.id !== id);
+    renderAuditTable();
+    calculateAuditTotals();
+}
+
+function calculateAuditTotals() {
+    let totalLoad = 0;
+    let totalDailyKwh = 0;
+    let categoryLoads = { HVAC: 0, "Process Heating": 0, Mechanical: 0, Lighting: 0, Other: 0 };
+    
+    auditInventory.forEach(item => {
+        const load = item.power * item.qty;
+        const daily = load * item.hours;
+        totalLoad += load;
+        totalDailyKwh += daily;
+        
+        const cat = categoryLoads[item.category] !== undefined ? item.category : "Other";
+        categoryLoads[cat] += daily;
+    });
+    
+    const monthlyCost = totalDailyKwh * 30 * 7.5;
+    const annualCarbon = (totalDailyKwh * 365 * 0.82) / 1000.0;
+    
+    document.getElementById("audit-total-load").textContent = totalLoad.toFixed(1);
+    document.getElementById("audit-total-daily-kwh").textContent = Math.round(totalDailyKwh).toLocaleString();
+    document.getElementById("audit-total-cost").textContent = Math.round(monthlyCost).toLocaleString();
+    document.getElementById("audit-total-co2").textContent = annualCarbon.toFixed(1);
+    
+    updateAuditChart(categoryLoads);
+}
+
+function updateAuditChart(categoryLoads) {
+    const ctx = document.getElementById("auditChart").getContext("2d");
+    const categories = Object.keys(categoryLoads);
+    const dataValues = categories.map(cat => Math.round(categoryLoads[cat]));
+    
+    if (auditChart) {
+        auditChart.data.datasets[0].data = dataValues;
+        auditChart.update();
+    } else {
+        auditChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: categories,
+                datasets: [{
+                    data: dataValues,
+                    backgroundColor: [
+                        '#0EA5E9', // HVAC
+                        '#EA580C', // Process Heating
+                        '#6366F1', // Mechanical
+                        '#E2B13C', // Lighting
+                        '#94A3B8'  // Other
+                    ],
+                    borderWidth: 1.5,
+                    borderColor: '#0a0d14'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '65%',
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            boxWidth: 8,
+                            font: { family: 'Outfit', size: 9.5 },
+                            color: '#94A3B8'
+                        }
+                    }
+                }
+            }
+        });
+    }
+}
+
+function syncAuditToCopilot() {
+    if (auditInventory.length === 0) {
+        alert("Please add machinery to your audit list before syncing.");
+        return;
+    }
+    
+    const navDashboard = document.getElementById("nav-dashboard");
+    const navAudit = document.getElementById("nav-audit");
+    const viewDashboard = document.getElementById("view-dashboard");
+    const viewAudit = document.getElementById("view-audit");
+    
+    navAudit.classList.remove("active");
+    navDashboard.classList.add("active");
+    viewAudit.style.display = "none";
+    viewDashboard.style.display = "block";
+    
+    if (typeof map !== "undefined" && map) {
+        setTimeout(() => {
+            map.invalidateSize();
+        }, 100);
+    }
+    
+    document.getElementById("copilot-panel").scrollIntoView({ behavior: "smooth" });
+    
+    const profileText = document.getElementById("msme-profile-selector").options[document.getElementById("msme-profile-selector").selectedIndex].text;
+    const totalLoad = document.getElementById("audit-total-load").textContent;
+    const totalKwh = document.getElementById("audit-total-daily-kwh").textContent;
+    const monthlyCost = document.getElementById("audit-total-cost").textContent;
+    const co2 = document.getElementById("audit-total-co2").textContent;
+    
+    let summaryText = `I have completed an Energy Audit for my ${profileText} facility. Here is my machinery profile:\n` +
+                      `- Connected Load: ${totalLoad} kW\n` +
+                      `- Daily consumption: ${totalKwh} kWh\n` +
+                      `- Estimated monthly cost: ₹${monthlyCost}\n` +
+                      `- Estimated carbon footprint: ${co2} tCO2/year\n\n` +
+                      `Equipment breakdown:\n`;
+                      
+    auditInventory.forEach(item => {
+        summaryText += `- ${item.name} (${item.category}): ${item.power} kW x ${item.qty} units running ${item.hours}h/day\n`;
+    });
+    
+    summaryText += `\nPlease audit this inventory and provide customized load-shifting and efficiency recommendations for my factory.`;
+    
+    document.getElementById("chat-input-text").value = summaryText;
+    sendChatMessage(summaryText);
+}
+
+// Bind to window context for inline events
+window.updateAuditRow = updateAuditRow;
+window.deleteAuditRow = deleteAuditRow;
